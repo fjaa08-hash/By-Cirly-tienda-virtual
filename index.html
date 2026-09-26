@@ -702,7 +702,7 @@ import {
   getFirestore, doc, setDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 import {
-  getAuth, signInAnonymously, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut
+  getAuth, signInAnonymously, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
 // ============================================================
@@ -931,24 +931,34 @@ let pendingLocalPush = false;
       }
     });
 
-    btn.addEventListener('click', async () => {
+    // Si venimos de regreso de una redirección de Google, procesamos el resultado
+    getRedirectResult(auth).then((result) => {
+      if (!result || !result.user) return;
+      const email = (result.user.email || '').toLowerCase();
+      if (AUTHORIZED_EMAILS.includes(email)){
+        enter();
+      } else {
+        statusEl.textContent = 'Ese correo no tiene acceso a By Cirly.';
+        signOut(auth).catch(() => {});
+      }
+    }).catch((e) => {
+      console.error('Error al procesar el inicio de sesión', e);
+      if (e && e.code === 'auth/unauthorized-domain'){
+        statusEl.textContent = 'Este sitio no está autorizado en Firebase (revisa Authentication → Configuración → Dominios autorizados).';
+      } else if (e && e.code) {
+        statusEl.textContent = 'No se pudo iniciar sesión (' + e.code + ').';
+      }
+    });
+
+    btn.addEventListener('click', () => {
       statusEl.textContent = '';
       btn.disabled = true;
-      try{
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const email = (result.user.email || '').toLowerCase();
-        if (AUTHORIZED_EMAILS.includes(email)){
-          enter();
-        } else {
-          statusEl.textContent = 'Ese correo no tiene acceso a By Cirly.';
-          await signOut(auth);
-        }
-      }catch(e){
+      const provider = new GoogleAuthProvider();
+      signInWithRedirect(auth, provider).catch((e) => {
         console.error('Error de inicio de sesión', e);
         statusEl.textContent = 'No se pudo iniciar sesión. Intenta de nuevo.';
-      }
-      btn.disabled = false;
+        btn.disabled = false;
+      });
     });
   }
 
