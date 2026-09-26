@@ -1,0 +1,14 @@
+{
+  "name": "By Cirly - Tienda Virtual",
+  "short_name": "By Cirly",
+  "description": "Catálogo, inventario, clientas y facturas de By Cirly Tienda Virtual",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FFF3FA",
+  "theme_color": "#FFF3FA",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
