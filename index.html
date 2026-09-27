@@ -702,7 +702,8 @@ import {
   getFirestore, doc, setDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 import {
-  getAuth, signInAnonymously, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut
+  getAuth, signInAnonymously, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut,
+  setPersistence, browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
 // ============================================================
@@ -963,15 +964,29 @@ let pendingLocalPush = false;
       statusEl.textContent = loginErrorMessage(e);
     });
 
-    btn.addEventListener('click', () => {
+    // Si venías de elegir tu cuenta de Google y tras unos segundos seguimos
+    // sin detectar sesión, lo más probable es que el celular esté bloqueando
+    // las cookies de terceros que necesita Firebase para completar el ingreso.
+    if (location.search.includes('state=') || document.referrer.includes('accounts.google.com')){
+      setTimeout(() => {
+        if (!entered && !statusEl.textContent){
+          statusEl.textContent = 'No se detectó el inicio de sesión. Revisa que Chrome no tenga bloqueadas las cookies de terceros e inténtalo de nuevo.';
+        }
+      }, 3500);
+    }
+
+    btn.addEventListener('click', async () => {
       statusEl.textContent = '';
       btn.disabled = true;
-      const provider = new GoogleAuthProvider();
-      signInWithRedirect(auth, provider).catch((e) => {
+      try{
+        await setPersistence(auth, browserLocalPersistence);
+        const provider = new GoogleAuthProvider();
+        await signInWithRedirect(auth, provider);
+      }catch(e){
         console.error('Error de inicio de sesión', e);
         statusEl.textContent = loginErrorMessage(e);
         btn.disabled = false;
-      });
+      }
     });
   }
 
